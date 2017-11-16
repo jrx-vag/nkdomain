@@ -121,7 +121,27 @@ http_get(FileId, Req) ->
     Qs = nkservice_rest_http:get_qs(Req),
     Token = case nklib_util:get_value(<<"x-netcomposer-auth">>, Headers, <<>>) of
         <<>> ->
-            nklib_util:get_value(<<"auth">>, Qs, <<>>);
+            case nklib_util:get_value(<<"auth">>, Qs, <<>>) of
+                <<>> ->
+                    case nklib_util:get_value(<<"cookie">>, Headers, <<>>) of
+                        <<>> ->
+                            <<>>;
+                        Cookie ->
+                            case binary:split(Cookie, <<"X-NetComposer-Auth=">>) of
+                                [_, AuthPrefix] ->
+                                    case binary:split(AuthPrefix, <<";">>) of
+                                        [Auth2|_] ->
+                                            Auth2;
+                                        _ ->
+                                            <<>>
+                                    end;
+                                _ ->
+                                    <<>>
+                            end
+                    end;
+                Auth1 ->
+                    Auth1
+            end;
         Auth0 ->
             Auth0
     end,
